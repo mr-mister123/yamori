@@ -1,26 +1,17 @@
 package de.yamori.gui;
 
-import java.awt.Component;
-import java.awt.Point;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.swing.DefaultCellEditor;
 import javax.swing.JFrame;
 import javax.swing.JTable;
-import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.event.CellEditorListener;
 import javax.swing.event.ChangeEvent;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableColumn;
 
 import de.yamori.api.AudioTrack;
@@ -35,7 +26,7 @@ public class TitleSelectionTable extends AbstractSelctionTable {
 	private final static int COL_DURATION = 2;
 	private final static int COL_DESCRIPTION = 3;
 	private final static int COL_AUDIO = 4;
-	private final static int COL_AUDIO_EDIT = 5;
+//	private final static int COL_AUDIO_EDIT = 5;
 	
 	private final Runnable selectionChanged;
 	
@@ -68,24 +59,11 @@ public class TitleSelectionTable extends AbstractSelctionTable {
 		jTable.addColumn(createColumn(COL_DESCRIPTION, 400, "Title", true));
 		jTable.addColumn(createColumn(COL_AUDIO, 180, "Audio", false));
 		
+		/*
 		TableColumn editCol = createColumn(COL_AUDIO_EDIT, 15, "", false);
 		editCol.setCellRenderer(IconRenderer.INSTANCE);
 		jTable.addColumn(editCol);
 
-		TableCellEditor defaultEditor = jTable.getDefaultEditor(String.class);
-		Component c = ((DefaultCellEditor)defaultEditor).getComponent();
-		if (c instanceof JTextField) {
-			final JTextField editorField = (JTextField) c;
-			editorField.addFocusListener(new FocusAdapter() {
-	
-				@Override
-				public void focusGained(FocusEvent e) {
-					editorField.selectAll();
-				}
-	
-			});
-		}
-		
 		jTable.addMouseListener(new MouseAdapter() {
 
 			@Override
@@ -112,6 +90,7 @@ public class TitleSelectionTable extends AbstractSelctionTable {
 			}
 
 		});
+		*/
 	}
 	
 	public void setDiscStructure(Disc disc) {
