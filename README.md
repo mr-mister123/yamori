@@ -12,3 +12,6 @@ so these have to be installed in order to use <b>yamori</b>.
 <b>yamori</b> is a pure java application, so java (>= 1.8) is required.
 To run execute following command:
 <pre>java -jar yamori.jar</pre>
+
+The latest release can be found here:
+https://github.com/mr-mister123/yamori/releases/latest
