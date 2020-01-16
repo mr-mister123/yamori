@@ -7,10 +7,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -22,11 +19,11 @@ import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
 
-import de.yamori.api.AudioTrack;
 import de.yamori.api.Disc;
 import de.yamori.api.ReaderBackend;
 import de.yamori.api.Title;
 import de.yamori.config.Config;
+import de.yamori.gui.TitleSelectionTable.TitleHolder;
 import de.yamori.impl.dvd.DVDReader;
 import de.yamori.main.Version;
 
@@ -74,30 +71,21 @@ public class MainFrame extends JFrame {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				final Collection<Title> titles = table.getSelectedTitles();
+				final Collection<TitleHolder> titles = table.getSelectedTitles();
 				BlockingFrame.run(MainFrame.this, new Trackable() {
 					
 					@Override
 					public void run(ProgressTracker tracker) {
 						int i = 1;
-						for (Title title : titles) {
+						for (TitleHolder titleHolder : titles) {
+							Title title = titleHolder.getTitle();
+
 							int progress = (int)((100.0d / (double)titles.size()) * (i - 1));
 							String info = "Processing Title " + i + "/" + titles.size();
 							tracker.setInfo(info);
 							tracker.setProgress(progress);
 
-							// TODO: copy deu / eng
-							List<AudioTrack> audio = new ArrayList<>(title.getAudioTracks());
-							Iterator<AudioTrack> iter = audio.iterator();
-							while (iter.hasNext()) {
-								AudioTrack track = iter.next();
-								if (!track.getLangIso2().equals("de")
-										&& !track.getLangIso2().equals("en")) {
-									iter.remove();
-								}
-							}
-
-							DVD.copyTo(title, audio, outputPath.getText() + File.separator + title.getDescription() + ".mkv", new ProgressTracker() {
+							DVD.copyTo(title, titleHolder.getSelectedAudioTracks(), outputPath.getText() + File.separator + title.getDescription() + ".mkv", new ProgressTracker() {
 								
 								@Override
 								public void setProgress(int value) {

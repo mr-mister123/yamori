@@ -1,7 +1,11 @@
 package de.yamori.gui;
 
+import java.awt.Color;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
+import javax.swing.BorderFactory;
 import javax.swing.JTable;
 import javax.swing.event.CellEditorListener;
 import javax.swing.event.ChangeEvent;
@@ -10,7 +14,7 @@ import javax.swing.table.TableColumn;
 
 import de.yamori.api.AudioTrack;
 
-public class AudioSelectionTable extends AbstractSelctionTable {
+public class AudioSelectionTable extends AbstractSelectionTable {
 	
 	private final static int COL_CHECKED = 0;
 	private final static int COL_ID = 1;
@@ -19,12 +23,14 @@ public class AudioSelectionTable extends AbstractSelctionTable {
 	private final Runnable selectionChanged;
 	
 	public AudioSelectionTable(Runnable selectionChanged) {
-		super();
+		super(false);
 		this.selectionChanged = selectionChanged;
 	}
 	
 	@Override
 	protected void init() {
+		setBorder(BorderFactory.createLineBorder(Color.lightGray, 1));
+
 		TableColumn checkCol = createColumn(COL_CHECKED, 15, "", true);
 		checkCol.setCellRenderer(CheckRenderer.INSTANCE);
 		checkCol.setCellEditor(new CheckEditor());
@@ -65,18 +71,16 @@ public class AudioSelectionTable extends AbstractSelctionTable {
 		fireSelectionChanged();
 	}
 	
-	/*
-	public Collection<Title> getSelectedTitles() {
-		List<Title> titles = new ArrayList<>();
+	public Collection<AudioTrack> getSelectedTracks() {
+		List<AudioTrack> titles = new ArrayList<>();
 		MyTableModel model = (MyTableModel) jTable.getModel();
 		for (int i = 0; i < jTable.getRowCount(); i++) {
 			if (Boolean.TRUE.equals(model.getValueAt(i, COL_CHECKED))) {
-				titles.add(model.getTitle(i).getTitle());
+				titles.add(model.getAudioTrack(i));
 			}
 		}
 		return titles;
 	}
-	*/
 	
 	private void fireSelectionChanged() {
 		if (selectionChanged != null) {

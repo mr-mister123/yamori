@@ -23,11 +23,11 @@ import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
-public abstract class AbstractSelctionTable extends JPanel {
+public abstract class AbstractSelectionTable extends JPanel {
 
 	protected final JTable jTable;
 
-	public AbstractSelctionTable() {
+	public AbstractSelectionTable(boolean scroll) {
 		setLayout(new BorderLayout());
 		
 		jTable = new JTable(null);
@@ -49,7 +49,11 @@ public abstract class AbstractSelctionTable extends JPanel {
 		}		
 		init();
 		
-		add(new JScrollPane(jTable), BorderLayout.CENTER);
+		if (scroll) {
+			add(new JScrollPane(jTable), BorderLayout.CENTER);
+		} else {
+			add(jTable, BorderLayout.CENTER);
+		}
 	}
 	
 	protected abstract void init();

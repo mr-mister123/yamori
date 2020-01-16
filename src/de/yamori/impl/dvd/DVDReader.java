@@ -3,6 +3,7 @@ package de.yamori.impl.dvd;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -15,6 +16,7 @@ import de.yamori.config.Config;
 import de.yamori.gui.ProgressTracker;
 import de.yamori.impl.common.ProcessBuilder;
 import de.yamori.impl.common.ProcessBuilder.OutputProcessor;
+import de.yamori.impl.common.YamoriUtils;
 
 public class DVDReader implements ReaderBackend {
 	
@@ -52,7 +54,7 @@ public class DVDReader implements ReaderBackend {
 	}
 	
 	@Override
-	public void copyTo(Title title, List<AudioTrack> audioTracks, String fileName, ProgressTracker tracker) {
+	public void copyTo(Title title, Collection<AudioTrack> audioTracks, String fileName, ProgressTracker tracker) {
 		// String tmp = config.getTmp() + "/yamori" + title.getId() + "_" + ((int)(Math.random() * 1000)) + ".vob";
 		
 //		String tmp = config.getTmp() + "/yamori" + title.getId() + "_" + ((int)(Math.random() * 1000)) + ".vob";
@@ -124,20 +126,24 @@ public class DVDReader implements ReaderBackend {
 		if (audioTracks != null) {
 			StringBuilder all = new StringBuilder();
 
-			for (AudioTrack t : audioTracks) {
-				cmd.add("--language");
-				cmd.add(t.getId() + ":" + toIso3(t.getLangIso2()));
-				cmd.add("--forced-track");
-				cmd.add(t.getId() + ":no");
-				
-				if (all.length() > 0) {
-					all.append(",");
+			// for (AudioTrack t : audioTracks) {
+			// preserve original order of tracks:
+			for (AudioTrack t : title.getAudioTracks()) {
+				if (audioTracks.contains(t)) {
+					cmd.add("--language");
+					cmd.add(t.getId() + ":" + toIso3(t.getLangIso2()));
+					cmd.add("--forced-track");
+					cmd.add(t.getId() + ":no");
+					
+					if (all.length() > 0) {
+						all.append(",");
+					}
+					all.append(t.getId());
+					
+					trackOrder.append(",");
+					trackOrder.append("0:");
+					trackOrder.append(t.getId());
 				}
-				all.append(t.getId());
-				
-				trackOrder.append(",");
-				trackOrder.append("0:");
-				trackOrder.append(t.getId());
 			}
 			
 			cmd.add("-a");
@@ -185,12 +191,11 @@ public class DVDReader implements ReaderBackend {
 	
 	// ISO 639-2
 	private final static String toIso3(String iso2) {
-		// TODO
-		if (iso2.equals("de")) {
-			return "ger";
-		} else if (iso2.equals("en")) {
-			return "eng";
+		String iso3b = YamoriUtils.langToIso3B(iso2);
+		if (iso3b != null) {
+			return iso3b;
 		}
+
 		// undefined:
 		return "und";
 	}

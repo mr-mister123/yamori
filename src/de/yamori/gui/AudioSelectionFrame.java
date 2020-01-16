@@ -13,18 +13,20 @@ import de.yamori.api.AudioTrack;
 public class AudioSelectionFrame extends JDialog {
 	
 	private final AudioSelectionTable table;
+	private final SelectionChanged onChange;
+	private int currentRow;
 	
-	public AudioSelectionFrame(JFrame parent) {
+	public AudioSelectionFrame(SelectionChanged onChange, JFrame parent) {
 		super(parent);
 		
 		setLayout(new BorderLayout());
 		
-		// TODO
-		table = new AudioSelectionTable(null);
+		this.onChange = onChange;
+		table = new AudioSelectionTable(this::selectionChanged);
 		add(table, BorderLayout.CENTER);
 		
 		setUndecorated(true);
-		setSize(150, 200);
+//		setSize(150, 200);
 		
 		addWindowFocusListener(new WindowFocusListener() {
 
@@ -46,8 +48,22 @@ public class AudioSelectionFrame extends JDialog {
 
 	}
 	
-	public void setTracks(Collection<AudioTrack> tracks, Collection<AudioTrack> selectedTracks) {
+	private void selectionChanged() {
+		onChange.setTracks(currentRow, table.getSelectedTracks());
+	}
+	
+	public void setTracks(int row, Collection<AudioTrack> tracks, Collection<AudioTrack> selectedTracks) {
+		currentRow = row;
 		table.setTracks(tracks, selectedTracks);
+		
+		// pack
+		setSize(150, table.getPreferredSize().height);
+	}
+	
+	public interface SelectionChanged {
+
+		public void setTracks(int row, Collection<AudioTrack> selectedTracks);
+
 	}
 
 }
