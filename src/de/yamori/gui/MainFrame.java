@@ -1,6 +1,7 @@
 package de.yamori.gui;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -8,18 +9,24 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.Collection;
+import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
 
+import de.yamori.api.Device;
 import de.yamori.api.Disc;
+import de.yamori.api.OperatingSystem;
 import de.yamori.api.ReaderBackend;
 import de.yamori.api.Title;
 import de.yamori.config.Config;
@@ -29,12 +36,15 @@ import de.yamori.main.Version;
 
 public class MainFrame extends JFrame {
 	
-	private final static ReaderBackend DVD = new DVDReader();
-	
 	private final JLabel discTitle;
 	private final TitleSelectionTable table;
 	private final JButton copyDisc;
 	private final JTextField outputPath;
+	private final OverlayIcon deviceIcon;
+	private final JPopupMenu deviceSelectionMenu;
+	
+	private Device currentSelected = null;
+	private ReaderBackend currentBackend = null;
 
 	public MainFrame() {
 		setLayout(new BorderLayout());
@@ -45,8 +55,37 @@ public class MainFrame extends JFrame {
 		JToolBar toolBar = new JToolBar();
 		add(toolBar, BorderLayout.NORTH);
 		
-		JButton openDisc = new JButton(Icons.getIcon("de/yamori/gui/icons/media-cdrom.png"));
+		JButton openDisc = new JButton();
+		deviceIcon = new OverlayIcon(Icons.getIcon("de/yamori/gui/icons/media-cdrom.png"), openDisc);
+		openDisc.setIcon(deviceIcon);
+
+		List<Device> devices = OperatingSystem.getCurrent().getDevices();
+		if (!devices.isEmpty()) {
+			currentSelected = devices.get(0);
+			deviceIcon.setText(currentSelected.getPath());
+			
+			deviceSelectionMenu = new JPopupMenu();
+			for (final Device dev : devices) {
+				JCheckBoxMenuItem item = new JCheckBoxMenuItem(dev.getPath());
+				item.setSelected(dev == currentSelected);
+				item.addActionListener(e -> {
+					if (item.isSelected()) {
+						deviceSelected(item, dev);
+					} else {
+						// abwählen nicht möglich...
+						item.setSelected(true);
+					}
+				});
+				deviceSelectionMenu.add(item);
+			}
+		} else {
+			deviceSelectionMenu = null;
+			openDisc.setEnabled(false);
+		}
+
 		toolBar.add(openDisc);
+		toolBar.add(ButtonDecorator.createDropDown(openDisc, () -> { return deviceSelectionMenu; }));
+
 		openDisc.addActionListener(new ActionListener() {
 			
 			@Override
@@ -55,11 +94,14 @@ public class MainFrame extends JFrame {
 					
 					@Override
 					public void run() {
-						Disc disc = DVD.getStructure();
-						SwingUtilities.invokeLater(() -> {
-							table.setDiscStructure(disc);
-							discTitle.setText(disc.getDiscTitle());
-						});
+//						Disc disc = DVD.getStructure();
+//						SwingUtilities.invokeLater(() -> {
+//							table.setDiscStructure(disc);
+//							discTitle.setText(disc.getDiscTitle());
+//						});
+						currentBackend = new DVDReader(currentSelected);
+						Disc disc = currentBackend.getStructure();
+						SwingUtilities.invokeLater(() -> { discSelected(disc); });
 					}
 
 				}, "reading disc", false);
@@ -85,7 +127,7 @@ public class MainFrame extends JFrame {
 							tracker.setInfo(info);
 							tracker.setProgress(progress);
 
-							DVD.copyTo(title, titleHolder.getSelectedAudioTracks(), outputPath.getText() + File.separator + title.getDescription() + ".mkv", new ProgressTracker() {
+							currentBackend.copyTo(title, titleHolder.getSelectedAudioTracks(), outputPath.getText() + File.separator + title.getDescription() + ".mkv", new ProgressTracker() {
 								
 								@Override
 								public void setProgress(int value) {
@@ -166,6 +208,39 @@ public class MainFrame extends JFrame {
 			copyDisc.setEnabled(true);
 		} else {
 			copyDisc.setEnabled(false);
+		}
+	}
+	
+	private void discSelected(Disc disc) {
+		if (disc != null) {
+			table.setDiscStructure(disc);
+			String title = disc.getDiscTitle();
+			if (title == null || title.isEmpty()) {
+				title = " ";
+			}
+			discTitle.setText(title);
+		} else {
+			table.setDiscStructure(null);
+			discTitle.setText(" ");
+		}
+	}
+	
+	private void deviceSelected(JMenuItem item, Device device) {
+		if (currentSelected != device) {
+			currentSelected = device;
+			currentBackend = null;
+
+			deviceIcon.setText(currentSelected.getPath());
+	
+			for (int i = 0; i < deviceSelectionMenu.getComponentCount(); i++) {
+				Component c = deviceSelectionMenu.getComponent(i);
+				if (c instanceof JCheckBoxMenuItem && c != item) {
+					((JCheckBoxMenuItem)c).setSelected(false);
+				}
+			}
+			
+			// clear table
+			discSelected(null);
 		}
 	}
 

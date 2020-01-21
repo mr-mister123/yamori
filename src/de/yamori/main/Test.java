@@ -1,9 +1,12 @@
 package de.yamori.main;
 
 import java.util.Arrays;
+import java.util.List;
 
 import de.yamori.api.AudioTrack;
+import de.yamori.api.Device;
 import de.yamori.api.Disc;
+import de.yamori.api.OperatingSystem;
 import de.yamori.api.ReaderBackend;
 import de.yamori.api.Title;
 import de.yamori.config.Config;
@@ -12,7 +15,15 @@ import de.yamori.impl.dvd.DVDReader;
 public class Test {
 
 	public static void main(String[] args) {
-		testStoreConfig();
+//		testStoreConfig();
+		listDevicesSystems();
+	}
+	
+	private static void listDevicesSystems() {
+		List<Device> devices = OperatingSystem.getCurrent().getDevices();
+		for (Device dev : devices) {
+			System.out.println(dev.getPath());
+		}
 	}
 	
 	private static void testStoreConfig() {
@@ -22,7 +33,7 @@ public class Test {
 	private static void testCopy() {
 		Config.getInstance().setTmp("/home/karsten");
 
-		ReaderBackend dvd = new DVDReader();
+		ReaderBackend dvd = new DVDReader(OperatingSystem.getCurrent().getDevices().get(0));
 		
 		Disc disc = dvd.getStructure();
 		if (disc != null) {

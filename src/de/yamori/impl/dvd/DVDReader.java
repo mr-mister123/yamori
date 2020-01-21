@@ -9,6 +9,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import de.yamori.api.AudioTrack;
+import de.yamori.api.Device;
 import de.yamori.api.Disc;
 import de.yamori.api.ReaderBackend;
 import de.yamori.api.Title;
@@ -22,8 +23,11 @@ public class DVDReader implements ReaderBackend {
 	
 	private final static Pattern PATTERN_MPLAYER_PROGRESS = Pattern.compile("\\(\\~([0-9]{1,3})\\.[0-9]{1}\\%\\)");
 	private final static Pattern PATTERN_MKVMERGE_PROGRESS = Pattern.compile("\\:\\ ([0-9]{1,3})\\%");
+	
+	private final Device device;
 
-	public DVDReader() {
+	public DVDReader(Device device) {
+		this.device = device;
 	}
 
 	@Override
@@ -33,7 +37,7 @@ public class DVDReader implements ReaderBackend {
 				
 				"lsdvd",
 				"-a",
-				Config.getInstance().getDvdDevice()
+				device.getPath()
 				
 		});
 		
@@ -70,7 +74,7 @@ public class DVDReader implements ReaderBackend {
 				"mplayer",
 				"dvd://" + title.getId(),
 				"-dvd-device",
-				Config.getInstance().getDvdDevice(),
+				device.getPath(),
 //				"-v",
 				"-dumpstream",
 				"-dumpfile",

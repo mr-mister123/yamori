@@ -95,9 +95,9 @@ public class TitleSelectionTable extends AbstractSelectionTable {
 	}
 	
 	public void setDiscStructure(Disc disc) {
-		MyTableModel model = new MyTableModel(disc.getTitles() != null ? disc.getTitles().size() : 0, jTable);
+		MyTableModel model = new MyTableModel(disc != null && disc.getTitles() != null ? disc.getTitles().size() : 0, jTable);
 		
-		if (disc.getTitles() != null) {
+		if (disc != null && disc.getTitles() != null) {
 			int i = 0;
 			for (Title t : disc.getTitles()) {
 				TitleHolder holder = new TitleHolder(t);
