@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import de.yamori.api.AudioTrack;
+import de.yamori.api.Subtitle;
 import de.yamori.api.Title;
 
 public class YamoriUtils {
@@ -211,7 +212,7 @@ public class YamoriUtils {
 	}
 	
 	public static Collection<AudioTrack> getDefaultAudioTracks(Title title) {
-		// TODO
+		// TODO from konfig
 		
 		Set<AudioTrack> _default = new HashSet<>();
 		Set<String> codes = new HashSet<>();
@@ -228,6 +229,24 @@ public class YamoriUtils {
 		return _default;
 	}
 	
+	public static Collection<Subtitle> getDefaultSubtitles(Title title) {
+		// TODO from konfig
+		
+		Set<Subtitle> _default = new HashSet<>();
+		Set<String> codes = new HashSet<>();
+		for (Subtitle t : title.getSubtitles()) {
+			if ("de".equals(t.getLangIso2())
+					|| "en".equals(t.getLangIso2())) {
+				if (!codes.contains(t.getLangIso2())) {
+					_default.add(t);
+					codes.add(t.getLangIso2());
+				}
+			}
+		}
+		
+		return _default;
+	}
+
 	public static String langToIso3B(String iso2) {
 		return iso2ToIso3B.get(iso2);
 	}

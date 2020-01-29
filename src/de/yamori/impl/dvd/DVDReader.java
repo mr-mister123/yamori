@@ -12,6 +12,7 @@ import de.yamori.api.AudioTrack;
 import de.yamori.api.Device;
 import de.yamori.api.Disc;
 import de.yamori.api.ReaderBackend;
+import de.yamori.api.Subtitle;
 import de.yamori.api.Title;
 import de.yamori.config.Config;
 import de.yamori.gui.ProgressTracker;
@@ -36,7 +37,7 @@ public class DVDReader implements ReaderBackend {
 		ProcessBuilder processBuilder = new ProcessBuilder(new String[] {
 				
 				"lsdvd",
-				"-a",
+				"-as",		// with (a)udio and (s)ubtitle information
 				device.getPath()
 				
 		});
@@ -214,6 +215,7 @@ public class DVDReader implements ReaderBackend {
 		@Override
 		public void process(String line) {
 			int audio;
+			int subtitle;
 			if (line.startsWith("Disc Title: ")) {
 				discTitle = line.substring("Disc Title: ".length());
 			} else if (line.startsWith("Title:")) {
@@ -252,6 +254,33 @@ public class DVDReader implements ReaderBackend {
 				}
 				
 				last.getAudioTracks().add(track);
+			} else if ((subtitle = line.indexOf("Subtitle: ")) != -1) {
+				Subtitle sub = new Subtitle();
+				sub.setId(Integer.parseInt(line.substring(subtitle + 10, line.indexOf(','))));
+				
+				int ids = line.indexOf("Language: ");
+				if (ids != -1) {
+					ids += 10;
+					
+					sub.setLangIso2(line.substring(ids, ids + 2));
+				}
+				
+				ids = line.indexOf("Stream id: ");
+				if (ids != -1) {
+					ids += 11;
+					
+					String sId = line.substring(ids).trim();
+					if (sId.startsWith("0x")) {
+						sId = sId.substring(2);
+					}
+					if (sId.endsWith(",")) {
+						sId = sId.substring(0, sId.length() - 1);
+					}
+					
+					sub.setStreamId(Integer.parseInt(sId, 16));
+				}
+				
+				last.getSubtitles().add(sub);
 			}
 		}
 		

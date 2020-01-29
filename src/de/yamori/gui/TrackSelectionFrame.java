@@ -8,21 +8,21 @@ import java.util.Collection;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 
-import de.yamori.api.AudioTrack;
+import de.yamori.api.DataStream;
 
-public class AudioSelectionFrame extends JDialog {
+public class TrackSelectionFrame<T extends DataStream> extends JDialog {
 	
-	private final AudioSelectionTable table;
-	private final SelectionChanged onChange;
+	private final TrackSelectionTable<T> table;
+	private final SelectionChanged<T> onChange;
 	private int currentRow;
 	
-	public AudioSelectionFrame(SelectionChanged onChange, JFrame parent) {
+	public TrackSelectionFrame(SelectionChanged<T> onChange, JFrame parent) {
 		super(parent);
 		
 		setLayout(new BorderLayout());
 		
 		this.onChange = onChange;
-		table = new AudioSelectionTable(this::selectionChanged);
+		table = createTable(this::selectionChanged);
 		add(table, BorderLayout.CENTER);
 		
 		setUndecorated(true);
@@ -33,7 +33,7 @@ public class AudioSelectionFrame extends JDialog {
 			@Override
 			public void windowLostFocus(WindowEvent e) {
 				boolean isChild = false;
-				if (e.getOppositeWindow() != null && e.getOppositeWindow().getOwner() == AudioSelectionFrame.this) {
+				if (e.getOppositeWindow() != null && e.getOppositeWindow().getOwner() == TrackSelectionFrame.this) {
 					isChild = true;
 				}
 				if (!isChild) {
@@ -48,11 +48,15 @@ public class AudioSelectionFrame extends JDialog {
 
 	}
 	
+	protected TrackSelectionTable<T> createTable(Runnable selectionChanged) {
+		return new TrackSelectionTable<>(selectionChanged);
+	}
+	
 	private void selectionChanged() {
 		onChange.setTracks(currentRow, table.getSelectedTracks());
 	}
 	
-	public void setTracks(int row, Collection<AudioTrack> tracks, Collection<AudioTrack> selectedTracks) {
+	public void setTracks(int row, Collection<T> tracks, Collection<T> selectedTracks) {
 		currentRow = row;
 		table.setTracks(tracks, selectedTracks);
 		
@@ -60,9 +64,9 @@ public class AudioSelectionFrame extends JDialog {
 		setSize(150, table.getPreferredSize().height);
 	}
 	
-	public interface SelectionChanged {
+	public interface SelectionChanged<T extends DataStream> {
 
-		public void setTracks(int row, Collection<AudioTrack> selectedTracks);
+		public void setTracks(int row, Collection<T> selectedTracks);
 
 	}
 

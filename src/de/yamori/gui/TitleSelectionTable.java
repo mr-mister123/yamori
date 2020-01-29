@@ -18,7 +18,9 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 
 import de.yamori.api.AudioTrack;
+import de.yamori.api.DataStream;
 import de.yamori.api.Disc;
+import de.yamori.api.Subtitle;
 import de.yamori.api.Title;
 import de.yamori.impl.common.YamoriUtils;
 
@@ -30,10 +32,13 @@ public class TitleSelectionTable extends AbstractSelectionTable {
 	private final static int COL_DESCRIPTION = 3;
 	private final static int COL_AUDIO = 4;
 	private final static int COL_AUDIO_EDIT = 5;
+	private final static int COL_SUBTITLE = 6;
+	private final static int COL_SUBTITLE_EDIT = 7;
 	
 	private final Runnable selectionChanged;
 	
-	private AudioSelectionFrame audioSelectionFrame = null;
+	private TrackSelectionFrame<AudioTrack> audioSelectionFrame = null;
+	private TrackSelectionFrame<Subtitle> subSelectionFrame = null;
 	
 	public TitleSelectionTable(Runnable selectionChanged) {
 		super(true);
@@ -42,7 +47,7 @@ public class TitleSelectionTable extends AbstractSelectionTable {
 	
 	@Override
 	protected void init() {
-		TableColumn checkCol = createColumn(COL_CHECKED, 15, "", true);
+		TableColumn checkCol = createColumn(COL_CHECKED, 32, "", true);
 		checkCol.setCellRenderer(CheckRenderer.INSTANCE);
 		checkCol.setCellEditor(new CheckEditor());
 		checkCol.getCellEditor().addCellEditorListener(new CellEditorListener() {
@@ -57,14 +62,21 @@ public class TitleSelectionTable extends AbstractSelectionTable {
 
 		});
 		jTable.addColumn(checkCol);			// selected
-		jTable.addColumn(createColumn(COL_ID, 15, "ID", false));
-		jTable.addColumn(createColumn(COL_DURATION, 80, "Duration", false));
+		jTable.addColumn(createColumn(COL_ID, 22, "ID", false));
+		jTable.addColumn(createColumn(COL_DURATION, 120, "Duration", false));
 		jTable.addColumn(createColumn(COL_DESCRIPTION, 400, "Title", true));
+
+		// Audio
 		jTable.addColumn(createColumn(COL_AUDIO, 180, "Audio", false));
-		
-		TableColumn editCol = createColumn(COL_AUDIO_EDIT, 15, "", false);
-		editCol.setCellRenderer(IconRenderer.INSTANCE);
-		jTable.addColumn(editCol);
+		TableColumn editAudioCol = createColumn(COL_AUDIO_EDIT, 22, "", false);
+		editAudioCol.setCellRenderer(IconRenderer.INSTANCE);
+		jTable.addColumn(editAudioCol);
+
+		// Subtitle
+		jTable.addColumn(createColumn(COL_SUBTITLE, 180, "Subtitles", false));
+		TableColumn editSubCol = createColumn(COL_SUBTITLE_EDIT, 22, "", false);
+		editSubCol.setCellRenderer(IconRenderer.INSTANCE);
+		jTable.addColumn(editSubCol);
 
 		jTable.addMouseListener(new MouseAdapter() {
 
@@ -78,10 +90,23 @@ public class TitleSelectionTable extends AbstractSelectionTable {
 						final int theRow = jTable.convertRowIndexToModel(row);
 						
 						SwingUtilities.invokeLater(() -> {
-							AudioSelectionFrame frame = getAudioSelectionFrame();
+							TrackSelectionFrame<AudioTrack> frame = getAudioSelectionFrame();
 							
 							TitleHolder title = ((MyTableModel) jTable.getModel()).getTitle(theRow);
 							frame.setTracks(row, title.getTitle().getAudioTracks(), title.getSelectedAudioTracks());
+							
+							Point p = jTable.getLocationOnScreen();
+							frame.setLocation(p.x + e.getX(), p.y + e.getY());
+							frame.setVisible(true);
+						});
+					} else if (col == COL_SUBTITLE_EDIT) {
+						final int theRow = jTable.convertRowIndexToModel(row);
+						
+						SwingUtilities.invokeLater(() -> {
+							TrackSelectionFrame<Subtitle> frame = getSubSelectionFrame();
+							
+							TitleHolder title = ((MyTableModel) jTable.getModel()).getTitle(theRow);
+							frame.setTracks(row, title.getTitle().getSubtitles(), title.getSelectedSubtitles());
 							
 							Point p = jTable.getLocationOnScreen();
 							frame.setLocation(p.x + e.getX(), p.y + e.getY());
@@ -110,8 +135,14 @@ public class TitleSelectionTable extends AbstractSelectionTable {
 					title = "title " + (i + 1);
 				}
 				model.setValueAt(title, i, COL_DESCRIPTION);
+
+				// Audio
 				holder.getSelectedAudioTracks().addAll(YamoriUtils.getDefaultAudioTracks(t));
-				model.setValueAt(buildAudioString(t.getAudioTracks(), holder.getSelectedAudioTracks()), i, COL_AUDIO);
+				model.setValueAt(buildStreamString(t.getAudioTracks(), holder.getSelectedAudioTracks()), i, COL_AUDIO);
+				
+				// Subtitles
+				holder.getSelectedSubtitles().addAll(YamoriUtils.getDefaultSubtitles(t));
+				model.setValueAt(buildStreamString(t.getSubtitles(), holder.getSelectedSubtitles()), i, COL_SUBTITLE);
 				
 				// store in hidden col:
 				model.setTitle(holder, i);
@@ -141,11 +172,11 @@ public class TitleSelectionTable extends AbstractSelectionTable {
 		}
 	}
 	
-	private String buildAudioString(List<AudioTrack> all, Collection<AudioTrack> selected) {
+	private <T extends DataStream> String buildStreamString(List<T> all, Collection<T> selected) {
 		StringBuilder audio = new StringBuilder();
 		audio.append("<html>");
 		int a = 0;
-		for (AudioTrack track : all) {
+		for (DataStream track : all) {
 			if (a > 0) {
 				audio.append(", ");
 			}
@@ -163,22 +194,38 @@ public class TitleSelectionTable extends AbstractSelectionTable {
 		return audio.toString();
 	}
 	
-	private AudioSelectionFrame getAudioSelectionFrame()  {
+	private TrackSelectionFrame<AudioTrack> getAudioSelectionFrame()  {
 		if (audioSelectionFrame == null)  {
-			audioSelectionFrame = new AudioSelectionFrame((row, selectedTracks) -> {
+			audioSelectionFrame = new TrackSelectionFrame<>((row, selectedTracks) -> {
 
 				MyTableModel model = (MyTableModel) jTable.getModel();
 				TitleHolder title = model.getTitle(row);
 				title.getSelectedAudioTracks().clear();
 				title.getSelectedAudioTracks().addAll(selectedTracks);
 				
-				model.setValueAt(buildAudioString(title.getTitle().getAudioTracks(), selectedTracks), row, COL_AUDIO);
+				model.setValueAt(buildStreamString(title.getTitle().getAudioTracks(), selectedTracks), row, COL_AUDIO);
 
 			}, (JFrame) SwingUtilities.getWindowAncestor(this));
 		}
 		return audioSelectionFrame;
 	}
 	
+	private TrackSelectionFrame<Subtitle> getSubSelectionFrame()  {
+		if (subSelectionFrame == null)  {
+			subSelectionFrame = new TrackSelectionFrame<>((row, selectedTracks) -> {
+
+				MyTableModel model = (MyTableModel) jTable.getModel();
+				TitleHolder title = model.getTitle(row);
+				title.getSelectedSubtitles().clear();
+				title.getSelectedSubtitles().addAll(selectedTracks);
+				
+				model.setValueAt(buildStreamString(title.getTitle().getSubtitles(), selectedTracks), row, COL_SUBTITLE);
+
+			}, (JFrame) SwingUtilities.getWindowAncestor(this));
+		}
+		return subSelectionFrame;
+	}
+
 	private final static class MyTableModel extends DefaultTableModel {
 		
 		private MyTableModel(int rows, JTable table) {
@@ -200,6 +247,7 @@ public class TitleSelectionTable extends AbstractSelectionTable {
 	
 	public final static class TitleHolder {
 		private final Set<AudioTrack> selectedAudioTracks = new HashSet<>();
+		private final Set<Subtitle> selectedSubtitles = new HashSet<>();
 
 		private final Title title;
 
@@ -213,6 +261,10 @@ public class TitleSelectionTable extends AbstractSelectionTable {
 		
 		public Set<AudioTrack> getSelectedAudioTracks() {
 			return selectedAudioTracks;
+		}
+		
+		public Set<Subtitle> getSelectedSubtitles() {
+			return selectedSubtitles;
 		}
 
 	}

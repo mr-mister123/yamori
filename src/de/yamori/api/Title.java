@@ -6,6 +6,7 @@ import java.util.List;
 public class Title {
 
 	private final List<AudioTrack> audioTracks = new ArrayList<>();
+	private final List<Subtitle> subtitles = new ArrayList<>();
 
 	private int id;
 	private String duration;
@@ -37,6 +38,10 @@ public class Title {
 	
 	public List<AudioTrack> getAudioTracks() {
 		return audioTracks;
+	}
+	
+	public List<Subtitle> getSubtitles() {
+		return subtitles;
 	}
 
 }
