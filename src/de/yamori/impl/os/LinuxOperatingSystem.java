@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -33,6 +34,8 @@ public class LinuxOperatingSystem extends OperatingSystem {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
+		list.sort(Comparator.comparing(Device::getPath));
 		
 		return list;
 	}
