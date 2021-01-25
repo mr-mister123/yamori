@@ -127,7 +127,7 @@ public class MainFrame extends JFrame {
 							tracker.setInfo(info);
 							tracker.setProgress(progress);
 
-							currentBackend.copyTo(title, titleHolder.getSelectedAudioTracks(), outputPath.getText() + File.separator + title.getDescription() + ".mkv", new ProgressTracker() {
+							currentBackend.copyTo(title, titleHolder.getSelectedAudioTracks(), titleHolder.getSelectedSubtitles(), outputPath.getText() + File.separator + title.getDescription() + ".mkv", new ProgressTracker() {
 								
 								@Override
 								public void setProgress(int value) {

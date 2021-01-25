@@ -8,6 +8,6 @@ public interface ReaderBackend {
 	
 	public Disc getStructure();
 	
-	public void copyTo(Title title, Collection<AudioTrack> audioTracks, String fileName, ProgressTracker tracker);
+	public void copyTo(Title title, Collection<AudioTrack> audioTracks, Collection<Subtitle> subtitles, String fileName, ProgressTracker tracker);
 
 }

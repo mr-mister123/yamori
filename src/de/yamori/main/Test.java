@@ -1,6 +1,7 @@
 package de.yamori.main;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import de.yamori.api.AudioTrack;
@@ -54,7 +55,7 @@ public class Test {
 				title3.setDescription("Toller test 123");
 				AudioTrack a1 = title3.getAudioTracks().get(0);
 				AudioTrack a2 = title3.getAudioTracks().get(1);
-				dvd.copyTo(title3, Arrays.asList(a1, a2) , "/home/karsten/title3.mkv", null);
+				dvd.copyTo(title3, Arrays.asList(a1, a2), Collections.emptyList() , "/home/karsten/title3.mkv", null);
 			}
 		}
 	}

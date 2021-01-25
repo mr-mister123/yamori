@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -16,6 +17,7 @@ import de.yamori.api.Subtitle;
 import de.yamori.api.Title;
 import de.yamori.config.Config;
 import de.yamori.gui.ProgressTracker;
+import de.yamori.impl.common.Job;
 import de.yamori.impl.common.ProcessBuilder;
 import de.yamori.impl.common.ProcessBuilder.OutputProcessor;
 import de.yamori.impl.common.YamoriUtils;
@@ -23,6 +25,7 @@ import de.yamori.impl.common.YamoriUtils;
 public class DVDReader implements ReaderBackend {
 	
 	private final static Pattern PATTERN_MPLAYER_PROGRESS = Pattern.compile("\\(\\~([0-9]{1,3})\\.[0-9]{1}\\%\\)");
+	private final static Pattern PATTERN_MENCODER_PROGRESS = Pattern.compile("\\(([0-9]{1,3})\\%\\)");
 	private final static Pattern PATTERN_MKVMERGE_PROGRESS = Pattern.compile("\\:\\ ([0-9]{1,3})\\%");
 	
 	private final Device device;
@@ -59,7 +62,7 @@ public class DVDReader implements ReaderBackend {
 	}
 	
 	@Override
-	public void copyTo(Title title, Collection<AudioTrack> audioTracks, String fileName, ProgressTracker tracker) {
+	public void copyTo(Title title, Collection<AudioTrack> audioTracks, Collection<Subtitle> subtitles, String fileName, ProgressTracker tracker) {
 		// String tmp = config.getTmp() + "/yamori" + title.getId() + "_" + ((int)(Math.random() * 1000)) + ".vob";
 		
 //		String tmp = config.getTmp() + "/yamori" + title.getId() + "_" + ((int)(Math.random() * 1000)) + ".vob";
@@ -69,7 +72,48 @@ public class DVDReader implements ReaderBackend {
 		}
 
 		String tmp = tmpFolder + "/tmp.vob";
+		
+		Job job = new Job();
+		job.addTask(p -> this.dumpStream(title, tmp, p));
 	
+		String subs;
+		List<Subtitle> subsOrdered = new LinkedList<Subtitle>();
+		if (!subtitles.isEmpty()) {
+			subs = tmpFolder + "/subs";
+			
+			// preserve original order of tracks:
+			for (Subtitle sub : title.getSubtitles()) {
+				if (subtitles.contains(sub)) {
+					subsOrdered.add(sub);
+					job.addTask(p -> this.extractSubtitle(sub, subsOrdered.size() - 1, subs, tmp, p), 0.2d);
+				}
+			}
+		} else {
+			subs = null;
+		}
+
+		job.addTask(p -> this.mkvMerge(title, audioTracks, subsOrdered, fileName, tmp, subs, p));
+		
+		// and execute:
+		job.execute(tracker);
+
+		
+		new File(tmp).delete();
+		tmpFolder.delete();
+	}
+	
+	// ISO 639-2
+	private final static String toIso3(String iso2) {
+		String iso3b = YamoriUtils.langToIso3B(iso2);
+		if (iso3b != null) {
+			return iso3b;
+		}
+
+		// undefined:
+		return "und";
+	}
+	
+	private boolean dumpStream(Title title, String tmp, ProgressTracker tracker) {
 		ProcessBuilder processBuilder = new ProcessBuilder(new String[] {
 				
 				"mplayer",
@@ -83,22 +127,65 @@ public class DVDReader implements ReaderBackend {
 				
 		});
 		try {
-			tracker.setInfo("Dumping Stream");
+			tracker.setInfo("Dumping stream");
 			processBuilder.execute(row -> {
 				System.out.println(row);
 
 				Matcher matcher = PATTERN_MPLAYER_PROGRESS.matcher(row);
 				if (matcher.find()) {
 					String percent = matcher.group(1);
-					tracker.setProgress(Integer.parseInt(percent) >> 1);
+					tracker.setProgress(Integer.parseInt(percent));
 				}
 			});
+			
+			return true;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		
+		return false;
+	}
+	
+	private boolean extractSubtitle(Subtitle subtitle, int index, String subFile, String tmp, ProgressTracker tracker) {
+		// mencoder tmp.vob -nosound -ovc frameno -o /dev/null -vobsubout subs -vobsuboutindex 0 -sid 0
+		ProcessBuilder processBuilder = new ProcessBuilder(new String[] {
+				
+				"mencoder",
+				tmp,
+				"-nosound",
+				"-ovc",
+				"frameno",
+				"-o",
+				"/dev/null",
+				"-vobsubout",
+				subFile,
+				"-vobsuboutindex",
+				Integer.toString(index),
+				"-sid",
+				Integer.toString(subtitle.getId() - 1)	// 0-basiert
+				
+		});
+		try {
+			tracker.setInfo("Extracting subtitle (" + subtitle.getLangIso2() + " " + subtitle.getId() + ")");
+			processBuilder.execute(row -> {
+				System.out.println(row);
+
+				Matcher matcher = PATTERN_MENCODER_PROGRESS.matcher(row);
+				if (matcher.find()) {
+					String percent = matcher.group(1);
+					tracker.setProgress(Integer.parseInt(percent));
+				}
+			});
+			
+			return true;
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return false;
+	}
+	
+	private boolean mkvMerge(Title title, Collection<AudioTrack> audioTracks, Collection<Subtitle> subtitles, String fileName, String tmp, String subs, ProgressTracker tracker) {
 		/*
 		"mkvmerge"
 		-o "/home/karsten/yamori3_503.mkv"
@@ -124,11 +211,12 @@ public class DVDReader implements ReaderBackend {
 		cmd.add("--display-dimensions");
 		// TODO: Aspect-Ratio korrekt errechnen. Hier aktuell fest 1:1.78 (=16/9) hinterlegt...:
 		cmd.add("0:1024x576");
+//		cmd.add("0:768x576");
 		
 		StringBuilder trackOrder = new StringBuilder();
 		trackOrder.append("0:0");
 		
-		if (audioTracks != null) {
+		if (audioTracks != null && !audioTracks.isEmpty()) {
 			StringBuilder all = new StringBuilder();
 
 			// for (AudioTrack t : audioTracks) {
@@ -169,40 +257,64 @@ public class DVDReader implements ReaderBackend {
 		
 		cmd.add(tmp);
 		
+		if (subtitles != null && !subtitles.isEmpty()) {
+			StringBuilder all = new StringBuilder();
+
+			int index = 0;
+			for (Subtitle sub : subtitles) {
+				cmd.add("--language");
+				cmd.add(index + ":" + toIso3(sub.getLangIso2()));
+				cmd.add("--forced-track");
+				cmd.add(index + ":no");
+
+				if (all.length() > 0) {
+					all.append(",");
+				}
+				all.append(index);
+
+				trackOrder.append(",");
+				trackOrder.append("1:");
+				trackOrder.append(index);
+				
+				index++;
+			}
+
+			cmd.add("-s");
+			cmd.add(all.toString());
+
+			cmd.add("-D");
+			cmd.add("-A");
+			cmd.add("-T");
+			cmd.add("--no-global-tags");
+			cmd.add("--no-chapters");
+
+			cmd.add(subs + ".idx");
+		}
+		
 		cmd.add("--track-order");
 		cmd.add(trackOrder.toString());
 		
-		processBuilder = new ProcessBuilder(cmd.toArray(new String[cmd.size()]));
+		ProcessBuilder processBuilder = new ProcessBuilder(cmd.toArray(new String[cmd.size()]));
 		try {
 			tracker.setInfo("Building MKV");
-			tracker.setProgress(50);
+			tracker.setProgress(0);
 			processBuilder.execute(row -> {
 				System.out.println(row);
 
 				Matcher matcher = PATTERN_MKVMERGE_PROGRESS.matcher(row);
 				if (matcher.find()) {
 					String percent = matcher.group(1);
-					tracker.setProgress(50 + (Integer.parseInt(percent) >> 1));
+					tracker.setProgress(Integer.parseInt(percent));
 				}
 			});
+			
+			return true;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
-		new File(tmp).delete();
-		tmpFolder.delete();
-	}
-	
-	// ISO 639-2
-	private final static String toIso3(String iso2) {
-		String iso3b = YamoriUtils.langToIso3B(iso2);
-		if (iso3b != null) {
-			return iso3b;
-		}
-
-		// undefined:
-		return "und";
+		return false;
 	}
 	
 	private final static class LSDVD implements OutputProcessor {
