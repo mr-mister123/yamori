@@ -99,6 +99,10 @@ public class DVDReader implements ReaderBackend {
 
 		
 		new File(tmp).delete();
+		if (subs != null) {
+			new File(subs + ".idx").delete();
+			new File(subs + ".sub").delete();
+		}
 		tmpFolder.delete();
 	}
 	
