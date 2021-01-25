@@ -23,6 +23,9 @@
         	<fileset dir="bin">
 			    <include name="**/*"/>
 			</fileset>
+        	<fileset dir=".">
+			    <include name="LICENSE.md"/>
+			</fileset>
         </jar>
     </target>
 
