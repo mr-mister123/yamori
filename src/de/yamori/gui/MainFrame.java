@@ -15,14 +15,17 @@ import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
+import javax.swing.filechooser.FileFilter;
 
 import de.yamori.api.Device;
 import de.yamori.api.Disc;
@@ -42,6 +45,7 @@ public class MainFrame extends JFrame {
 	private final JTextField outputPath;
 	private final OverlayIcon deviceIcon;
 	private final JPopupMenu deviceSelectionMenu;
+	private final JFileChooser fileChooser;
 	
 	private Device currentSelected = null;
 	private ReaderBackend currentBackend = null;
@@ -52,6 +56,22 @@ public class MainFrame extends JFrame {
 		setTitle(Version.APPLICATION_NAME + " v" + Version.VERSION);
 		setIconImage(((ImageIcon)Icons.getIcon("de/yamori/gui/icons/media-cdrom32.png")).getImage());
 		
+		fileChooser = new JFileChooser();	// TODO: last path
+		fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+		fileChooser.setFileFilter(new FileFilter() {
+			
+			@Override
+			public String getDescription() {
+				return "Disc Images (*.iso)";
+			}
+			
+			@Override
+			public boolean accept(File f) {
+				return f.getName().toLowerCase().endsWith(".iso");
+			}
+
+		});
+		
 		JToolBar toolBar = new JToolBar();
 		add(toolBar, BorderLayout.NORTH);
 		
@@ -59,12 +79,12 @@ public class MainFrame extends JFrame {
 		deviceIcon = new OverlayIcon(Icons.getIcon("de/yamori/gui/icons/media-cdrom.png"), openDisc);
 		openDisc.setIcon(deviceIcon);
 
+		deviceSelectionMenu = new JPopupMenu();
 		List<Device> devices = OperatingSystem.getCurrent().getDevices();
 		if (!devices.isEmpty()) {
 			currentSelected = devices.get(0);
 			deviceIcon.setText(currentSelected.getPath());
 			
-			deviceSelectionMenu = new JPopupMenu();
 			for (final Device dev : devices) {
 				JCheckBoxMenuItem item = new JCheckBoxMenuItem(dev.getPath());
 				item.setSelected(dev == currentSelected);
@@ -78,10 +98,18 @@ public class MainFrame extends JFrame {
 				});
 				deviceSelectionMenu.add(item);
 			}
+			deviceSelectionMenu.add(new JSeparator());
 		} else {
-			deviceSelectionMenu = null;
 			openDisc.setEnabled(false);
 		}
+		JMenuItem openImage = new JMenuItem("Open Disc-Image");
+		openImage.addActionListener(e -> {
+			int result = fileChooser.showOpenDialog(MainFrame.this);
+			if (result == JFileChooser.APPROVE_OPTION) {
+				readDisc(new DVDReader(fileChooser.getSelectedFile()));
+			}
+		});
+		deviceSelectionMenu.add(openImage);
 
 		toolBar.add(openDisc);
 		toolBar.add(ButtonDecorator.createDropDown(openDisc, () -> { return deviceSelectionMenu; }));
@@ -90,21 +118,7 @@ public class MainFrame extends JFrame {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				BlockingFrame.run(MainFrame.this, new Runnable() {
-					
-					@Override
-					public void run() {
-//						Disc disc = DVD.getStructure();
-//						SwingUtilities.invokeLater(() -> {
-//							table.setDiscStructure(disc);
-//							discTitle.setText(disc.getDiscTitle());
-//						});
-						currentBackend = new DVDReader(currentSelected);
-						Disc disc = currentBackend.getStructure();
-						SwingUtilities.invokeLater(() -> { discSelected(disc); });
-					}
-
-				}, "reading disc", false);
+				readDisc(new DVDReader(currentSelected));
 			}
 
 		});
@@ -242,6 +256,19 @@ public class MainFrame extends JFrame {
 			// clear table
 			discSelected(null);
 		}
+	}
+	
+	private void readDisc(final ReaderBackend reader) {
+		BlockingFrame.run(MainFrame.this, new Runnable() {
+			
+			@Override
+			public void run() {
+				currentBackend = reader;
+				Disc disc = currentBackend.getStructure();
+				SwingUtilities.invokeLater(() -> { discSelected(disc); });
+			}
+
+		}, "reading disc", false);
 	}
 
 }

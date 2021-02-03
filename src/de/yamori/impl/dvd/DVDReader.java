@@ -30,6 +30,10 @@ public class DVDReader implements ReaderBackend {
 	
 	private final Device device;
 
+	public DVDReader(File isoImage) {
+		this(new Device(isoImage.getAbsolutePath()));
+	}
+
 	public DVDReader(Device device) {
 		this.device = device;
 	}
