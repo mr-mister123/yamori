@@ -218,6 +218,7 @@ public class DVDReader implements ReaderBackend {
 		cmd.add("0:no");
 		cmd.add("--display-dimensions");
 		// TODO: Aspect-Ratio korrekt errechnen. Hier aktuell fest 1:1.78 (=16/9) hinterlegt...:
+		// mplayer -vo null -ao null -frames 1 -identify dvd://4 -dvd-device /dev/sr0
 		cmd.add("0:1024x576");
 //		cmd.add("0:768x576");
 		
