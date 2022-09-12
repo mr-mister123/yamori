@@ -67,7 +67,7 @@ public class MainFrame extends JFrame {
 			
 			@Override
 			public boolean accept(File f) {
-				return f.getName().toLowerCase().endsWith(".iso");
+				return f.isDirectory() || f.getName().toLowerCase().endsWith(".iso");
 			}
 
 		});
