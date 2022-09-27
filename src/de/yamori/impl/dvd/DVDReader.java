@@ -105,13 +105,15 @@ public class DVDReader implements ReaderBackend {
 		// and execute:
 		job.execute(tracker);
 
-		
+		// TODO debug
+		/*
 		new File(tmp).delete();
 		if (subs != null) {
 			new File(subs + ".idx").delete();
 			new File(subs + ".sub").delete();
 		}
 		tmpFolder.delete();
+		*/
 	}
 	
 	// ISO 639-2
@@ -200,6 +202,8 @@ public class DVDReader implements ReaderBackend {
 	private boolean mkvMerge(Title title, Collection<AudioTrack> audioTracks, Collection<Subtitle> subtitles, String fileName, String tmp, String subs, ProgressTracker tracker) {
 		
 		Multiplexer multiplexer = new Multiplexer();
+		multiplexer.setOutputFile(new File(fileName));
+		multiplexer.setTitle(title.getDescription());
 		
 		VideoStream videoStream = new VideoStream();
 		videoStream.setLangIso2(null);	// undefined
@@ -214,7 +218,7 @@ public class DVDReader implements ReaderBackend {
 								null);
 		
 		if (subs != null) {
-			multiplexer.addMovie(new File(subs), null, null, subtitles);
+			multiplexer.addMovie(new File(subs + ".idx"), null, null, subtitles);
 		}
 		
 		return multiplexer.execute(tracker);
