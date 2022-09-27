@@ -1,4 +1,4 @@
-package de.yamori.impl.common;
+package de.yamori.util.common;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -7,9 +7,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import de.yamori.api.AudioTrack;
-import de.yamori.api.Subtitle;
 import de.yamori.api.Title;
+import de.yamori.util.api.AudioTrack;
+import de.yamori.util.api.Subtitle;
 
 public class YamoriUtils {
 	

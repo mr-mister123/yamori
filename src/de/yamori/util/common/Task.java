@@ -1,6 +1,4 @@
-package de.yamori.impl.common;
-
-import de.yamori.gui.ProgressTracker;
+package de.yamori.util.common;
 
 public interface Task {
 	

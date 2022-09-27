@@ -17,12 +17,12 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 
-import de.yamori.api.AudioTrack;
-import de.yamori.api.DataStream;
 import de.yamori.api.Disc;
-import de.yamori.api.Subtitle;
 import de.yamori.api.Title;
-import de.yamori.impl.common.YamoriUtils;
+import de.yamori.util.api.AudioTrack;
+import de.yamori.util.api.DataStream;
+import de.yamori.util.api.Subtitle;
+import de.yamori.util.common.YamoriUtils;
 
 public class TitleSelectionTable extends AbstractSelectionTable {
 	

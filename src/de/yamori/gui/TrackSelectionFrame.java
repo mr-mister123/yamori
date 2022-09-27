@@ -8,7 +8,7 @@ import java.util.Collection;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 
-import de.yamori.api.DataStream;
+import de.yamori.util.api.DataStream;
 
 public class TrackSelectionFrame<T extends DataStream> extends JDialog {
 	

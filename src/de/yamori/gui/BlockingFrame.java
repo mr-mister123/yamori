@@ -14,6 +14,8 @@ import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
 
+import de.yamori.util.common.ProgressTracker;
+
 public class BlockingFrame extends JDialog {
 	
 	

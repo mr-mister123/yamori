@@ -12,7 +12,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 
-import de.yamori.api.DataStream;
+import de.yamori.util.api.DataStream;
 
 public class TrackSelectionTable<T extends DataStream> extends AbstractSelectionTable {
 	

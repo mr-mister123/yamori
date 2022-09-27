@@ -1,4 +1,4 @@
-package de.yamori.api;
+package de.yamori.util.api;
 
 public class Subtitle extends DataStream {
 	

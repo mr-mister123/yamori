@@ -1,4 +1,4 @@
-package de.yamori.impl.common;
+package de.yamori.util.common;
 
 import java.io.BufferedReader;
 import java.io.IOException;

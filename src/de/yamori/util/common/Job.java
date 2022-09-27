@@ -1,10 +1,8 @@
-package de.yamori.impl.common;
+package de.yamori.util.common;
 
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-
-import de.yamori.gui.ProgressTracker;
 
 public class Job implements Task {
 	

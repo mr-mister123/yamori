@@ -1,4 +1,4 @@
-package de.yamori.gui;
+package de.yamori.util.common;
 
 public interface ProgressTracker {
 	

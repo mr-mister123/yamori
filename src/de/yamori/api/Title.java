@@ -3,6 +3,9 @@ package de.yamori.api;
 import java.util.ArrayList;
 import java.util.List;
 
+import de.yamori.util.api.AudioTrack;
+import de.yamori.util.api.Subtitle;
+
 public class Title {
 
 	private final List<AudioTrack> audioTracks = new ArrayList<>();

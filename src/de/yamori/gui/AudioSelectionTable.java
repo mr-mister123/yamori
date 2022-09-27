@@ -12,7 +12,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 
-import de.yamori.api.AudioTrack;
+import de.yamori.util.api.AudioTrack;
 
 public class AudioSelectionTable extends AbstractSelectionTable {
 	

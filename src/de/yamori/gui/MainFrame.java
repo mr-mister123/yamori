@@ -36,6 +36,7 @@ import de.yamori.config.Config;
 import de.yamori.gui.TitleSelectionTable.TitleHolder;
 import de.yamori.impl.dvd.DVDReader;
 import de.yamori.main.Version;
+import de.yamori.util.common.ProgressTracker;
 
 public class MainFrame extends JFrame {
 	

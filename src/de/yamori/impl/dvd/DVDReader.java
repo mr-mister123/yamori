@@ -4,29 +4,33 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
-import de.yamori.api.AudioTrack;
 import de.yamori.api.Device;
 import de.yamori.api.Disc;
 import de.yamori.api.ReaderBackend;
-import de.yamori.api.Subtitle;
 import de.yamori.api.Title;
 import de.yamori.config.Config;
-import de.yamori.gui.ProgressTracker;
-import de.yamori.impl.common.Job;
-import de.yamori.impl.common.ProcessBuilder;
-import de.yamori.impl.common.ProcessBuilder.OutputProcessor;
-import de.yamori.impl.common.YamoriUtils;
+import de.yamori.util.api.AudioTrack;
+import de.yamori.util.api.Subtitle;
+import de.yamori.util.api.VideoStream;
+import de.yamori.util.common.Job;
+import de.yamori.util.common.ProcessBuilder;
+import de.yamori.util.common.ProcessBuilder.OutputProcessor;
+import de.yamori.util.common.ProgressTracker;
+import de.yamori.util.common.YamoriUtils;
+import de.yamori.util.mkvtools.Multiplexer;
 
 public class DVDReader implements ReaderBackend {
 	
 	private final static Pattern PATTERN_MPLAYER_PROGRESS = Pattern.compile("\\(\\~([0-9]{1,3})\\.[0-9]{1}\\%\\)");
 	private final static Pattern PATTERN_MENCODER_PROGRESS = Pattern.compile("\\(([0-9]{1,3})\\%\\)");
-	private final static Pattern PATTERN_MKVMERGE_PROGRESS = Pattern.compile("\\:\\ ([0-9]{1,3})\\%");
+//	private final static Pattern PATTERN_MKVMERGE_PROGRESS = Pattern.compile("\\:\\ ([0-9]{1,3})\\%");
 	
 	private final Device device;
 
@@ -194,6 +198,27 @@ public class DVDReader implements ReaderBackend {
 	}
 	
 	private boolean mkvMerge(Title title, Collection<AudioTrack> audioTracks, Collection<Subtitle> subtitles, String fileName, String tmp, String subs, ProgressTracker tracker) {
+		
+		Multiplexer multiplexer = new Multiplexer();
+		
+		VideoStream videoStream = new VideoStream();
+		videoStream.setLangIso2(null);	// undefined
+		videoStream.setId(0);			// bei dvd immer 0
+
+		multiplexer.addMovie(new File(tmp),
+								Collections.singletonList(videoStream),
+								// preserve order of audio-tracks:
+								title.getAudioTracks().stream()
+														.filter(t -> audioTracks != null && audioTracks.contains(t))
+														.collect(Collectors.toList()),
+								null);
+		
+		if (subs != null) {
+			multiplexer.addMovie(new File(subs), null, null, subtitles);
+		}
+		
+		return multiplexer.execute(tracker);
+		
 		/*
 		"mkvmerge"
 		-o "/home/karsten/yamori3_503.mkv"
@@ -210,6 +235,7 @@ public class DVDReader implements ReaderBackend {
 		"--track-order" "0:0,0:1,0:2"
 		*/
 		
+		/*
 		List<String> cmd = new ArrayList<>();
 		cmd.add("mkvmerge");
 		cmd.add("-o");
@@ -324,6 +350,7 @@ public class DVDReader implements ReaderBackend {
 		}
 		
 		return false;
+		*/
 	}
 	
 	private final static class LSDVD implements OutputProcessor {
