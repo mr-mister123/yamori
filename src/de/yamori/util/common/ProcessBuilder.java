@@ -1,6 +1,7 @@
 package de.yamori.util.common;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -14,13 +15,38 @@ public class ProcessBuilder {
 		this.cmd = cmd;
 	}
 	
+	public String execute() throws IOException {
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		
+		_execute(in -> {
+			byte[] buffer = new byte[1024];
+			int len;
+			while ((len = in.read(buffer)) != -1) {
+				out.write(buffer, 0, len);
+			}
+		});
+		
+		return out.toString();
+	}
+
 	public int execute(OutputProcessor processor) throws IOException {
+		return _execute(in -> {
+			try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+				String line;
+				while ((line = reader.readLine()) != null) {
+					processor.process(line);
+				}
+			}
+		});
+	}
+
+	private int _execute(InputStreamHandler stdOutConsumer) throws IOException {
 		
 		Arrays.asList(cmd).stream().forEach(s -> System.out.print(s + " "));
 		System.out.println();
 		
 		Process process = Runtime.getRuntime().exec(cmd);
-		if (processor != null) {
+		if (stdOutConsumer != null) {
 			Thread consumeError = new Thread("error consumer") {
 			
 				@Override
@@ -44,11 +70,9 @@ public class ProcessBuilder {
 
 			};
 			consumeError.start();
-			try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-				String line;
-				while ((line = reader.readLine()) != null) {
-					processor.process(line);
-				}
+			
+			try (InputStream in = process.getInputStream()) {
+				stdOutConsumer.handle(in);
 			}
 		}
 		try {
@@ -61,6 +85,13 @@ public class ProcessBuilder {
 
 		public void process(String line);
 
+	}
+	
+	@FunctionalInterface
+	public interface InputStreamHandler {
+		
+		public void handle(InputStream i) throws IOException;
+		
 	}
 
 }
