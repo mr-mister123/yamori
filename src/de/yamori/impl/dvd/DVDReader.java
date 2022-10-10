@@ -1,5 +1,6 @@
 package de.yamori.impl.dvd;
 
+import java.awt.Dimension;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,7 +24,6 @@ import de.yamori.util.common.Job;
 import de.yamori.util.common.ProcessBuilder;
 import de.yamori.util.common.ProcessBuilder.OutputProcessor;
 import de.yamori.util.common.ProgressTracker;
-import de.yamori.util.common.YamoriUtils;
 import de.yamori.util.mkvtools.Multiplexer;
 
 public class DVDReader implements ReaderBackend {
@@ -105,18 +105,16 @@ public class DVDReader implements ReaderBackend {
 		// and execute:
 		job.execute(tracker);
 
-		// TODO debug
-		/*
 		new File(tmp).delete();
 		if (subs != null) {
 			new File(subs + ".idx").delete();
 			new File(subs + ".sub").delete();
 		}
 		tmpFolder.delete();
-		*/
 	}
 	
 	// ISO 639-2
+	/*
 	private final static String toIso3(String iso2) {
 		String iso3b = YamoriUtils.langToIso3B(iso2);
 		if (iso3b != null) {
@@ -126,6 +124,7 @@ public class DVDReader implements ReaderBackend {
 		// undefined:
 		return "und";
 	}
+	*/
 	
 	private boolean dumpStream(Title title, String tmp, ProgressTracker tracker) {
 		ProcessBuilder processBuilder = new ProcessBuilder(new String[] {
@@ -208,6 +207,10 @@ public class DVDReader implements ReaderBackend {
 		VideoStream videoStream = new VideoStream();
 		videoStream.setLangIso2(null);	// undefined
 		videoStream.setId(0);			// bei dvd immer 0
+		videoStream.setDisplayDimension(detectDisplayDimension(tmp));
+		// cmd.add(t.getId() + ":1024x576");
+		// cmd.add(t.getId() + ":768x576");
+
 
 		multiplexer.addMovie(new File(tmp),
 								Collections.singletonList(videoStream),
@@ -355,6 +358,55 @@ public class DVDReader implements ReaderBackend {
 		
 		return false;
 		*/
+	}
+	
+	private Dimension detectDisplayDimension(String tmp) {
+		// mplayer -vo null -ao null -frames 1 -identify dvd://4 -dvd-device /dev/sr0
+		// Alternativ:
+		// mkvmerge -J /tmp/yamori1_266/tmp.vob
+		
+		ProcessBuilder processBuilder = new ProcessBuilder(new String[] {
+				
+				"mplayer",
+				"-vo",
+				"null",
+				"-ao",
+				"null",
+				"-frames",
+				"1",
+				"-identify",
+				tmp
+				
+		});
+		
+		Identify i = new Identify();
+		try {
+			processBuilder.execute(i);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return i.getDisplayDimension();
+	}
+	
+	private final static class Identify implements OutputProcessor {
+		
+		private final static Pattern DIM_PATTERN = Pattern.compile("VO:\\s+(\\[[^\\]]*\\])\\s+[0-9]+x[0-9]+\\s+\\=\\>\\s+([0-9]+)x([0-9]+).*");
+		
+		private Dimension displayDimension = null;
+
+		@Override
+		public void process(String line) {
+			Matcher matcher = DIM_PATTERN.matcher(line);
+			if (matcher.matches()) {
+				displayDimension = new Dimension(Integer.parseInt(matcher.group(2)), Integer.parseInt(matcher.group(3)));
+			}
+		}
+		
+		public Dimension getDisplayDimension() {
+			return displayDimension;
+		}
+		
 	}
 	
 	private final static class LSDVD implements OutputProcessor {

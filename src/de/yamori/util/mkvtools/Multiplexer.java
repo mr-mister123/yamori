@@ -93,12 +93,11 @@ public class Multiplexer implements Task {
 					cmd.add(t.getId() + ":" + toIso3(t.getLangIso2()));
 					cmd.add("--forced-track");
 					cmd.add(t.getId() + ":no");
-					cmd.add("--display-dimensions");
 					
-					// TODO: Aspect-Ratio korrekt errechnen. Hier aktuell fest 1:1.78 (=16/9) hinterlegt...:
-					// mplayer -vo null -ao null -frames 1 -identify dvd://4 -dvd-device /dev/sr0
-					cmd.add(t.getId() + ":1024x576");
-					// cmd.add("0:768x576");
+					if (t.getDisplayDimension() != null) {
+						cmd.add("--display-dimensions");
+						cmd.add(t.getId() + ":" + t.getDisplayDimension().width + "x" + t.getDisplayDimension().height);
+					}
 					
 					if (all.length() > 0) {
 						all.append(",");
