@@ -88,7 +88,7 @@ public class ProcessBuilder {
 	}
 	
 	@FunctionalInterface
-	public interface InputStreamHandler {
+	private interface InputStreamHandler {
 		
 		public void handle(InputStream i) throws IOException;
 		
