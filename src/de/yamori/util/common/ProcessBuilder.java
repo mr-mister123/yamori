@@ -11,6 +11,8 @@ public class ProcessBuilder {
 	
 	private final String[] cmd;
 	
+	private int exitCode = -1;
+	
 	public ProcessBuilder(String[] cmd) {
 		this.cmd = cmd;
 	}
@@ -38,6 +40,15 @@ public class ProcessBuilder {
 				}
 			}
 		});
+	}
+	
+	/**
+	 * Liefert den ExitCode des zuletzt durchgeführten Aufrufs
+	 * 
+	 * @return den exitCode oder -1, falls noch kein Aufruf erfolgte
+	 */
+	public int getExitCode() {
+		return exitCode;
 	}
 
 	private int _execute(InputStreamHandler stdOutConsumer) throws IOException {
@@ -76,9 +87,9 @@ public class ProcessBuilder {
 			}
 		}
 		try {
-			return process.waitFor();
+			return (exitCode = process.waitFor());
 		} catch (InterruptedException e) {}
-		return -999;
+		return (exitCode = -999);
 	}
 	
 	public interface OutputProcessor {
