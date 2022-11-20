@@ -25,6 +25,8 @@ public class Multiplexer implements Task {
 	
 	private final List<InputFile> inputFiles = new LinkedList<>();
 	
+	private boolean printToStdOut = false;
+	
 	private String title;
 	private File outputFile;
 
@@ -50,6 +52,10 @@ public class Multiplexer implements Task {
 	
 	public void addMovie(File inputFile, Collection<VideoStream> videoStreams, Collection<AudioTrack> audioTracks, Collection<Subtitle> subtitles) {
 		inputFiles.add(new InputFile(inputFile, videoStreams, audioTracks, subtitles));
+	}
+	
+	public void setPrintToStdOut(boolean printToStdOut) {
+		this.printToStdOut = printToStdOut;
 	}
 	
 	@Override
@@ -191,8 +197,10 @@ public class Multiplexer implements Task {
 		try {
 			tracker.setInfo("Building MKV");
 			tracker.setProgress(0);
-			processBuilder.execute(row -> {
-				System.out.println(row);
+			int exitCode = processBuilder.execute(row -> {
+				if (printToStdOut) {
+					System.out.println(row);
+				}
 
 				Matcher matcher = PATTERN_MKVMERGE_PROGRESS.matcher(row);
 				if (matcher.find()) {
@@ -201,7 +209,7 @@ public class Multiplexer implements Task {
 				}
 			});
 			
-			return true;
+			return exitCode == 0;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

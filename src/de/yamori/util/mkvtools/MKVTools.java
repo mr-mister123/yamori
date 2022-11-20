@@ -39,12 +39,14 @@ public class MKVTools {
 			return null;
 		}
 		
+		// PENDING: use mplayer to detect file-length?
+		
 		ProcessBuilder processBuilder = new ProcessBuilder(new String[] { "mkvmerge", "-J", file.getAbsolutePath() });
 		try {
 			String info = processBuilder.execute();
 
-			// TODO debug!
-			System.out.println(info);
+			// T O D O debug!
+			// System.out.println(info);
 			
 			if (processBuilder.getExitCode() == 0) {
 				JSONObject json = new JSONObject(info);
