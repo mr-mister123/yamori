@@ -55,6 +55,10 @@ public class Config {
 		this.outputPath = outputPath;
 	}
 	
+	public File getConfigFolder() {
+		return new File(defaultConfigFileFolder);
+	}
+	
 	public static Config loadConfig() {
 		Properties properties = new Properties();
 		File folder = new File(defaultConfigFileFolder);
