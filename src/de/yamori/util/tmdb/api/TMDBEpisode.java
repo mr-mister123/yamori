@@ -1,6 +1,6 @@
 package de.yamori.util.tmdb.api;
 
-public abstract class TMDBEpisodes {
+public abstract class TMDBEpisode {
 	private final int id;
 	
 	private String name;
@@ -8,7 +8,7 @@ public abstract class TMDBEpisodes {
 	private int season;
 	private int episode;
 
-	public TMDBEpisodes(int id) {
+	public TMDBEpisode(int id) {
 		this.id = id;
 	}
 
