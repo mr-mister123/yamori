@@ -9,6 +9,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedList;
@@ -83,7 +84,7 @@ public class TMDBUtils {
 			key += "__" + firstAirDate;
 		}
 
-		return queryOrFromCache(TYPE_SERIES_LOOKUP, key, () -> querySeriesTMDB(_query, _firstAirDate), TMDBUtils::convertSeries);
+		return new ArrayList<>(queryOrFromCache(TYPE_SERIES_LOOKUP, key, () -> querySeriesTMDB(_query, _firstAirDate), TMDBUtils::convertSeries));
 	}
 
 	public static List<TMDBEpisode> queryEpisodes(TMDBSeries series) {
@@ -91,7 +92,7 @@ public class TMDBUtils {
 			return Collections.emptyList();
 		}
 
-		return queryOrFromCache(TYPE_SERIES, Integer.toString(series.getId()), () -> queryEpisodesTMDB(series), json -> convertEpisodes(series, json));
+		return new ArrayList<>(queryOrFromCache(TYPE_SERIES, Integer.toString(series.getId()), () -> queryEpisodesTMDB(series), json -> convertEpisodes(series, json)));
 	}
 
 	private static List<TMDBEpisode> querySeasonEpisodes(TMDBSeries series, int season) {
@@ -223,7 +224,6 @@ public class TMDBUtils {
 		// Haben wir schon was im cache?
 		Optional<T> o = cache.get(type, key);
 		if (o != null) {
-			System.out.println("from cache");
 			return o.orElse(null);
 		}
 
