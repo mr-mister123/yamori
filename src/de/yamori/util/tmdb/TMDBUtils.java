@@ -7,14 +7,17 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
@@ -35,9 +38,9 @@ public class TMDBUtils {
 
 	private final static Pattern FIRST_AIR_DATE = Pattern.compile("\\(([0-9]{4})\\)");
 
-	private final static CacheKeyType<List<TMDBSeries>> TYPE_SERIES_LOOKUP = new CacheKeyType<>();
-	private final static CacheKeyType<List<TMDBEpisode>> TYPE_SERIES = new CacheKeyType<>();
-	private final static CacheKeyType<List<TMDBEpisode>> TYPE_EPISODES = new CacheKeyType<>();
+	private final static CacheKeyType<List<TMDBSeries>> TYPE_SERIES_LOOKUP = new CacheKeyType<>("SL");
+	private final static CacheKeyType<List<TMDBEpisode>> TYPE_SERIES = new CacheKeyType<>("S");
+	private final static CacheKeyType<List<TMDBEpisode>> TYPE_EPISODES = new CacheKeyType<>("E");
 
 	private final static File CACHE_DIR = new File(Config.getInstance().getConfigFolder(), "tmdb");
 
@@ -293,14 +296,47 @@ public class TMDBUtils {
 	}
 	
 	private synchronized static JSONObject fromFileSystemCache(CacheKeyType<?> type, String key) {
-
-		// TODO implement
+		String fileName = getCacheFileName(type, key);
+		
+		File f = new File(CACHE_DIR, fileName);
+		if (f.exists() && f.isFile() && f.canRead()) {
+			try {
+				return new JSONObject(new String(Files.readAllBytes(f.toPath())));
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 		
 		return null;
 	}
 	
 	private synchronized static void toFileSystemCache(CacheKeyType<?> type, String key, JSONObject json) {
-		// TODO implement
+		boolean cacheDirExists = CACHE_DIR.exists();
+		if (!cacheDirExists) {
+			cacheDirExists = CACHE_DIR.mkdirs();
+		}
+		
+		if (cacheDirExists) {
+			String fileName = getCacheFileName(type, key);
+			File f = new File(CACHE_DIR, fileName);
+			
+			try {
+				Files.write(f.toPath(), json.toString(2).getBytes());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	private static String getCacheFileName(CacheKeyType<?> type, String key) {
+		return new StringBuilder()
+				.append(type.getId())
+				.append("_")
+				.append(key.replaceAll("[^a-zA-Z0-9_-]+", "_"))
+				.append("_")
+				.append(Integer.toHexString(Math.abs(key.hashCode())))
+				.append(".json")
+				.toString();
 	}
 
 	private final static class CacheKey<T> {
@@ -347,9 +383,21 @@ public class TMDBUtils {
 	}
 
 	private final static class CacheKeyType<T> {
+		
+		private final static Set<String> ids = new HashSet<>();
+		
+		private final String id;
 
-		private CacheKeyType() {
+		private CacheKeyType(String id) {
+			if (!ids.add(id)) {
+				throw new IllegalArgumentException("Duplicate CacheKeyType-Id " + id);
+			}
 
+			this.id = id;
+		}
+		
+		public String getId() {
+			return id;
 		}
 
 		@Override
