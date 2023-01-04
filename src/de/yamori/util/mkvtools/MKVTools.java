@@ -12,6 +12,7 @@ import org.json.JSONObject;
 import de.yamori.util.api.AudioTrack;
 import de.yamori.util.api.DataStream;
 import de.yamori.util.api.MovieContainer;
+import de.yamori.util.api.Subtitle;
 import de.yamori.util.api.VideoStream;
 import de.yamori.util.common.ProcessBuilder;
 import de.yamori.util.common.YamoriUtils;
@@ -72,7 +73,13 @@ public class MKVTools {
 							readBaseParameter(track, a);
 							
 							c.getAudioTracks().add(a);
-						} // TODO: subtitle --> example needed
+						} else if ("subtitles".equals(type)) {
+							Subtitle s = new Subtitle();
+							
+							readBaseParameter(track, s);
+							
+							c.getSubtitles().add(s);
+						}
 					}
 				}
 				
@@ -93,7 +100,7 @@ public class MKVTools {
 		
 		JSONObject props = track.getJSONObject("properties");
 		if (props != null) {
-			String language = props.getString("language");
+			String language = props.optString("language");
 			if (language != null && !"und".equals(language)) {
 				// mkvtools use iso3
 				stream.setLangIso2(YamoriUtils.langToIso2(language));
