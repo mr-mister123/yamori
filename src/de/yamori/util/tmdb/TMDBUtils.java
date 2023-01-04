@@ -7,7 +7,9 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.file.CopyOption;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -17,6 +19,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -318,10 +321,21 @@ public class TMDBUtils {
 		
 		if (cacheDirExists) {
 			String fileName = getCacheFileName(type, key);
-			File f = new File(CACHE_DIR, fileName);
+			
+			String tmpfileName = new StringBuilder(fileName)
+										.append(".")
+										.append((int)(Math.random() * 1000.d))
+										.append(".tmp")
+										.toString();
+			
+			File f = new File(CACHE_DIR, tmpfileName);
 			
 			try {
 				Files.write(f.toPath(), json.toString(2).getBytes());
+				
+				File dest = new File(CACHE_DIR, fileName);
+				
+				Files.move(f.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
