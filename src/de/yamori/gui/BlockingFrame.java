@@ -3,6 +3,7 @@ package de.yamori.gui;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Window;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -87,15 +88,15 @@ public class BlockingFrame extends JDialog {
 		}, blockImmediatly, false);
 	}
 	
-	public static void run(JFrame parent, Trackable trackable, boolean blockImmediatly) {
+	public static void run(Window parent, Trackable trackable, boolean blockImmediatly) {
 		run(parent, trackable, blockImmediatly, true);
 	}
 
-	private static void run(JFrame parent, Trackable trackable, boolean blockImmediatly, boolean showPercentage) {
+	private static void run(Window parent, Trackable trackable, boolean blockImmediatly, boolean showPercentage) {
 		SwingUtilities.invokeLater(() -> _run(parent, trackable, blockImmediatly, showPercentage));
 	}
 	
-	private static void _run(JFrame parent, final Trackable trackable, boolean blockImmediatly, boolean showPercentage) {
+	private static void _run(Window parent, final Trackable trackable, boolean blockImmediatly, boolean showPercentage) {
 		synchronized (BlockingFrame.class) {
 			if (blocked) {
 				throw new RuntimeException();
