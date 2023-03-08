@@ -225,6 +225,9 @@ public class YamoriUtils {
 				}
 			}
 		}
+		if (_default.isEmpty() && title.getAudioTracks().size() == 1) {
+			_default.add(title.getAudioTracks().get(0));
+		}
 		
 		return _default;
 	}
@@ -242,6 +245,9 @@ public class YamoriUtils {
 					codes.add(t.getLangIso2());
 				}
 			}
+		}
+		if (_default.isEmpty() && title.getSubtitles().size() == 1) {
+			_default.add(title.getSubtitles().get(0));
 		}
 		
 		return _default;
